@@ -33,7 +33,7 @@ public class CallListenerService extends Service {
         @Override
         public void onCallStateChanged(int state, String incomingNumber) {
             if (state == TelephonyManager.CALL_STATE_RINGING) {
-                Toast.makeText(getApplicationContext(), incomingNumber + " 来电", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), String.format(getString(R.string.who_call_in), incomingNumber), Toast.LENGTH_LONG).show();
             }
         }
     }

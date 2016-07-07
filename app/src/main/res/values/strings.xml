@@ -59,5 +59,6 @@
 
     <string name="pref_title_vibrate">Vibrate</string>
 
+    <string name="who_call_in">%1$s来电</string>
     <string name="notification_title">来电助手运行中...</string>
 </resources>
