@@ -120,10 +120,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setupActionBar();
-       /* // Display the fragment as the main content.
+        // Display the fragment as the main content.
         getFragmentManager().beginTransaction()
-                .replace(android.R.id.content, new GeneralPreferenceFragment())
-                .commit();*/
+                .replace(android.R.id.content, new NotificationPreferenceFragment())
+                .commit();
     }
 
     /**
@@ -133,7 +133,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             // Show the Up button in the action bar.
-            actionBar.setDisplayHomeAsUpEnabled(true);
+//            actionBar.setDisplayHomeAsUpEnabled(true);
         }
     }
 
@@ -151,7 +151,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     @Override
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public void onBuildHeaders(List<Header> target) {
-        loadHeadersFromResource(R.xml.pref_headers, target);
+//        loadHeadersFromResource(R.xml.pref_headers, target);
     }
 
     /**

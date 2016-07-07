@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.telephony.PhoneStateListener;
@@ -13,6 +14,8 @@ import android.widget.Toast;
 
 public class CallListenerService extends Service {
     private static final String TAG = "CallListenerService";
+    private TelephonyManager tm;
+    private MyPhoneStateListener listener;
 
     public CallListenerService() {
     }
@@ -23,18 +26,57 @@ public class CallListenerService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate>>>>>>>");
         // 获取电话管理器
-        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+        tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
         // 监听电话状态
-        telephonyManager.listen(new MyPhoneStateListener(), PhoneStateListener.LISTEN_CALL_STATE);
+        listener = new MyPhoneStateListener();
+        tm.listen(listener, PhoneStateListener.LISTEN_CALL_STATE);
     }
 
 
     private class MyPhoneStateListener extends PhoneStateListener {
+        AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        int oldRingMode = -1;
+        int oldVolume = -1;
+
         @Override
         public void onCallStateChanged(int state, String incomingNumber) {
-            if (state == TelephonyManager.CALL_STATE_RINGING) {
-                Toast.makeText(getApplicationContext(), String.format(getString(R.string.who_call_in), incomingNumber), Toast.LENGTH_LONG).show();
+            // TODO: 检查手机号是否是配置中的
+            switch (state) {
+                case TelephonyManager.CALL_STATE_RINGING:   //响铃
+                    Toast.makeText(getApplicationContext(), String.format(getString(R.string.who_call_in), incomingNumber), Toast.LENGTH_SHORT).show();
+                    int ringMode = audioManager.getRingerMode();
+                    Toast.makeText(getApplicationContext(), "ringMode=" + ringMode, Toast.LENGTH_SHORT).show();
+                    int volume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+                    int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
+                    Toast.makeText(getApplicationContext(), "volume=" + volume + ", maxVolume=" + maxVolume, Toast.LENGTH_SHORT).show();
+                    if (ringMode == AudioManager.RINGER_MODE_SILENT || ringMode == AudioManager.RINGER_MODE_VIBRATE || volume == 0) {
+                        oldVolume = volume;
+                        oldRingMode = ringMode;
+                        audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                        audioManager.setStreamVolume(AudioManager.STREAM_RING, maxVolume / 3, AudioManager.FLAG_PLAY_SOUND);
+                    }
+
+                    break;
+                case TelephonyManager.CALL_STATE_OFFHOOK:   //接听
+                    Toast.makeText(getApplicationContext(), "接听" + incomingNumber, Toast.LENGTH_SHORT).show();
+                    if (oldRingMode > -1) {
+                        audioManager.setRingerMode(oldRingMode);
+                    }
+                    if (oldVolume > -1) {
+                        audioManager.setStreamVolume(AudioManager.STREAM_RING, oldVolume, AudioManager.FLAG_PLAY_SOUND);
+                    }
+                    break;
+                case TelephonyManager.CALL_STATE_IDLE:      //空闲
+                    Toast.makeText(getApplicationContext(), "挂断" + incomingNumber, Toast.LENGTH_SHORT).show();
+                    if (oldRingMode > -1) {
+                        audioManager.setRingerMode(oldRingMode);
+                    }
+                    if (oldVolume > -1) {
+                        audioManager.setStreamVolume(AudioManager.STREAM_RING, oldVolume, AudioManager.FLAG_PLAY_SOUND);
+                    }
+                    break;
             }
+
         }
     }
 
@@ -67,5 +109,7 @@ public class CallListenerService extends Service {
     public void onDestroy() {
         super.onDestroy();
         stopForeground(true);
+        tm.listen(listener, PhoneStateListener.LISTEN_NONE);
+        listener = null;
     }
 }
