@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
@@ -40,15 +41,27 @@ public class CallListenerService extends Service {
 
         @Override
         public void onCallStateChanged(int state, String incomingNumber) {
-            // TODO: 检查手机号是否是配置中的
+            boolean open = PreferenceManager
+                    .getDefaultSharedPreferences(getApplicationContext())
+                    .getBoolean("pref_global_switch", true);
+            if (!open) {
+                return;
+            }
+            String listenContact = PreferenceManager
+                    .getDefaultSharedPreferences(getApplicationContext())
+                    .getString("pref_listen_contact", "");
+            if (!listenContact.replaceAll("-", "").replaceAll(" ", "").contains(incomingNumber)) {
+                return;
+            }
+
             switch (state) {
                 case TelephonyManager.CALL_STATE_RINGING:   //响铃
                     Toast.makeText(getApplicationContext(), String.format(getString(R.string.who_call_in), incomingNumber), Toast.LENGTH_SHORT).show();
                     int ringMode = audioManager.getRingerMode();
-                    Toast.makeText(getApplicationContext(), "ringMode=" + ringMode, Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(getApplicationContext(), "ringMode=" + ringMode, Toast.LENGTH_SHORT).show();
                     int volume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
                     int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
-                    Toast.makeText(getApplicationContext(), "volume=" + volume + ", maxVolume=" + maxVolume, Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(getApplicationContext(), "volume=" + volume + ", maxVolume=" + maxVolume, Toast.LENGTH_SHORT).show();
                     if (ringMode == AudioManager.RINGER_MODE_SILENT || ringMode == AudioManager.RINGER_MODE_VIBRATE || volume == 0) {
                         oldVolume = volume;
                         oldRingMode = ringMode;
@@ -58,7 +71,7 @@ public class CallListenerService extends Service {
 
                     break;
                 case TelephonyManager.CALL_STATE_OFFHOOK:   //接听
-                    Toast.makeText(getApplicationContext(), "接听" + incomingNumber, Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(getApplicationContext(), "接听" + incomingNumber, Toast.LENGTH_SHORT).show();
                     if (oldRingMode > -1) {
                         audioManager.setRingerMode(oldRingMode);
                     }
@@ -67,7 +80,7 @@ public class CallListenerService extends Service {
                     }
                     break;
                 case TelephonyManager.CALL_STATE_IDLE:      //空闲
-                    Toast.makeText(getApplicationContext(), "挂断" + incomingNumber, Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(getApplicationContext(), "挂断" + incomingNumber, Toast.LENGTH_SHORT).show();
                     if (oldRingMode > -1) {
                         audioManager.setRingerMode(oldRingMode);
                     }
